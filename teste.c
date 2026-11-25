@@ -1,4 +1,4 @@
-#define _POSIX_C_SOURCE 199309L   /* necessário para clock_gettime em Linux/Mac */
+#define _POSIX_C_SOURCE 199309L   /* necessario para clock_gettime em Linux/Mac */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,7 +11,7 @@
 #include <time.h>
 #endif
 
-/* tempo atual em segundos, com resolução de nanossegundos */
+/* tempo atual em segundos, com resolucao de nanossegundos */
 static double agora(void) {
 #ifdef _WIN32
     LARGE_INTEGER freq, cont;
@@ -27,7 +27,11 @@ static double agora(void) {
 
 void gerar_aleatorio(int v[], int n) {
     for (int i = 0; i < n; i++) {
-        v[i] = (rand() << 15) | rand();   /* combina duas chamadas: rand() é pequeno no Windows */
+        /* Usa so 15 bits de cada rand() (o minimo que o C garante) e junta dois:
+           da 30 bits em qualquer sistema, sem estourar o int. */
+        unsigned alto  = (unsigned)rand() & 0x7FFFu;
+        unsigned baixo = (unsigned)rand() & 0x7FFFu;
+        v[i] = (int)((alto << 15) | baixo);
     }
 }
 
@@ -38,6 +42,11 @@ int esta_ordenado(const int v[], int n) {
     return 1;
 }
 
+void imprimir_vetor(const int v[], int n) {
+    for (int i = 0; i < n; i++) printf("%d ", v[i]);
+    printf("\n");
+}
+
 double medir_tempo(void (*algoritmo)(int[], int),
                    const int original[], int n, int *ok) {
     int *copia = malloc(n * sizeof(int));
@@ -45,13 +54,13 @@ double medir_tempo(void (*algoritmo)(int[], int),
         printf("Erro: sem memoria\n");
         exit(1);
     }
-    memcpy(copia, original, n * sizeof(int));   /* cópia fica fora da medição */
+    memcpy(copia, original, n * sizeof(int));   /* copia fica fora da medicao */
 
     double inicio = agora();
     algoritmo(copia, n);
     double fim = agora();
 
-    if (ok != NULL) *ok = esta_ordenado(copia, n);
+    if (ok != NULL) *ok = esta_ordenado(copia, n);   /* verificacao fora da medicao */
 
     free(copia);
     return fim - inicio;
